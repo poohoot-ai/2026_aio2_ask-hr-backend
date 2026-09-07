@@ -6,8 +6,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.139.0",
+    "google-genai>=2.22.0",
     "pydantic[email]>=2.0",
     "python-dotenv>=1.2.2",
+    "redis>=8.1.0",
     "supabase>=2.31.0",
     "uvicorn[standard]>=0.50.2",
 ]
