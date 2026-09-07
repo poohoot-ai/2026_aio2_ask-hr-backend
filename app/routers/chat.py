@@ -1,4 +1,4 @@
-"""면접관 응답을 만드는 라우터."""
+"""챗봇 응답을 만드는 라우터."""
 import time
 import json
 from datetime import datetime, timezone
@@ -23,7 +23,7 @@ from app.deps import require_own_conversation
 # 채팅을 처리하는 엔드포인트 라우트
 router = APIRouter(prefix="/conversations", tags=["chat"])
 
-# 사용자와 면접관 메시지를 합쳐 최근 몇 개까지 모델에 보낼지.
+# 사용자와 챗봇 메시지를 합쳐 최근 몇 개까지 모델에 보낼지.
 # 20개면 대략 10번 주고받은 분량이다.
 MAX_HISTORY_MESSAGES = 20
 
@@ -59,8 +59,8 @@ def usage_logs(conversation_id: UUID = Depends(require_own_conversation)):
     raw = r.lrange(_usage_log_key(conversation_id), 0, MAX_USAGE_LOGS - 1)
     return [json.loads(item) for item in raw]
 
-def _job_title(conversation_id: UUID) -> str:
-    """대화 제목이 곧 지원 직무다. 16일차에 `새 면접 시작` 에서 받은 값이다."""
+def _conversation_title(conversation_id: UUID) -> str:
+    """대화 제목이 대화에 포함된다. `새 대화 시작` 에서 받은 값이다."""
     result = (
         supabase.table("conversations")
         .select("title")
@@ -69,7 +69,7 @@ def _job_title(conversation_id: UUID) -> str:
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="conversation not found")
-    return result.data[0]["title"] or "지원 직무 미지정"
+    return result.data[0]["title"] or "대화 미지정"
 
 def _build_history(conversation_id: UUID) -> list[dict]:
     """모델에게 보낼 이전 대화를 만든다.
@@ -140,7 +140,7 @@ def _stream_answer(conversation_id: UUID, contents: list, system_prompt: str):
 
 @router.post("/{conversation_id}/chat")
 def chat(payload: ChatRequest, conversation_id: UUID = Depends(require_own_conversation)):
-    job_title = _job_title(conversation_id)
+    conversation_title = _conversation_title(conversation_id)
     # 이전 대화를 먼저 만든다. 사용자 메시지를 저장한 뒤에 만들면
     # 방금 쓴 답변이 이력에도 들어가 같은 말을 두 번 보내게 된다.
     history = _build_history(conversation_id)    
@@ -151,7 +151,7 @@ def chat(payload: ChatRequest, conversation_id: UUID = Depends(require_own_conve
     contents = history + [{"role": "user", "parts": [{"text": payload.content}]}]    
 
 	# 2) 제미나이 시스템 프롬프트를 생성한다.
-    system_prompt = build_system_prompt(job_title, payload.tone, payload.length)
+    system_prompt = build_system_prompt(conversation_title)
 
     return _stream_answer(
         conversation_id, 
