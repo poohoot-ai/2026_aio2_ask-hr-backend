@@ -92,12 +92,12 @@ G. 사용자가 추가 예시 요청
 -파일·이미지 생성 금지 — 텍스트만 응답"""
 )
 
-def build_system_prompt(job_title: str, tone: str | None, length: str | None) -> str:
-    """직무와 화면에서 고른 값으로 시스템 프롬프트를 조립한다.
+def build_system_prompt(conversation_title: str) -> str:
+    """제목과 시스템 프롬프트를 조립한다.
     """
     return " ".join(
         [
             BASE_PROMPT,
-            f"지원 직무는 '{job_title}' 입니다.",
+            f"대화 제목은 '{conversation_title}' 입니다.",
         ]
     )
