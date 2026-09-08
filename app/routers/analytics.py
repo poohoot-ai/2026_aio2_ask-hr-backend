@@ -2,7 +2,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from math import ceil
-from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -67,16 +66,6 @@ class LogsResult(BaseResult):
     limit: int
     offset: int
     items: list[LogEntry]
-
-
-class TimeBucket(Metrics):
-    bucket_start: datetime
-
-
-class TimeseriesResult(BaseResult):
-    interval: Literal["hour", "day"]
-    timezone: str = "UTC"
-    items: list[TimeBucket]
 
 
 class ConversationMetrics(Metrics):
@@ -196,25 +185,6 @@ def logs(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
          data: Dataset = Depends(load_dataset)):
     return dict(**data.base(), total=len(data.logs), limit=limit, offset=offset,
                 items=data.logs[offset:offset + limit])
-
-
-@router.get("/timeseries", response_model=TimeseriesResult)
-def timeseries(interval: Literal["hour", "day"] = "day",
-               data: Dataset = Depends(load_dataset)):
-    def floor(value):
-        value = value.astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
-        return value.replace(hour=0) if interval == "day" else value
-
-    grouped = defaultdict(list)
-    for row in data.logs:
-        grouped[floor(row.requested_at)].append(row)
-    cursor = floor(data.start)
-    step = timedelta(days=1) if interval == "day" else timedelta(hours=1)
-    items = []
-    while cursor < data.end:
-        items.append(TimeBucket(bucket_start=cursor, **metrics(grouped[cursor]).model_dump()))
-        cursor += step
-    return dict(**data.base(), interval=interval, items=items)
 
 
 @router.get("/conversations", response_model=ConversationsResult)

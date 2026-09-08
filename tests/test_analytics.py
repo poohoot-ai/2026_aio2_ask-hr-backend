@@ -66,13 +66,6 @@ class AnalyticsTests(unittest.TestCase):
         self.assertEqual(len(body["items"]), 1)
         self.assertEqual(body["items"][0]["latency_ms"], 300)
 
-    def test_timeseries_fills_empty_days(self):
-        response = self.client.get("/analytics/timeseries", params=PARAMS)
-        self.assertEqual(response.status_code, 200)
-        rows = response.json()["items"]
-        self.assertEqual([row["request_count"] for row in rows], [2, 0])
-        self.assertIsNone(rows[1]["avg_latency_ms"])
-
     def test_conversation_metrics(self):
         response = self.client.get("/analytics/conversations", params=PARAMS)
         self.assertEqual(response.status_code, 200)
@@ -109,7 +102,7 @@ class AnalyticsTests(unittest.TestCase):
     def test_any_authenticated_user_can_access_all_endpoints(self):
         self.app.dependency_overrides[get_current_user] = lambda: CurrentUser(
             "ordinary-user", "user@example.com", "user-token")
-        for endpoint in ("summary", "logs", "timeseries", "conversations"):
+        for endpoint in ("summary", "logs", "conversations"):
             with self.subTest(endpoint=endpoint):
                 response = self.client.get(f"/analytics/{endpoint}", params=PARAMS)
                 self.assertEqual(response.status_code, 200)

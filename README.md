@@ -95,7 +95,6 @@ Swagger `/docs`에서 Authorize 후 테스트할 수 있다.
 | 메서드 | 주소 | 용도 |
 | --- | --- | --- |
 | GET | `/analytics/summary` | 요청 수, 토큰 합계, 평균·p95 응답 시간, 대화 수 |
-| GET | `/analytics/timeseries` | UTC 시간별·일별 추이 (빈 구간 포함) |
 | GET | `/analytics/conversations` | 대화별 통계, 요청 수 내림차순 |
 | GET | `/analytics/logs` | 로그 상세 목록, 기록 시각 내림차순 |
 
@@ -104,12 +103,10 @@ Swagger `/docs`에서 Authorize 후 테스트할 수 있다.
 - `start`, `end`: 시간대가 포함된 ISO 8601 시각. `start` 포함, `end` 제외.
   생략하면 `end`는 현재, `start`는 `end`의 30일 전이다. 최대 조회 기간은 366일이다.
 - `conversation_id`: 선택적 대화 UUID. 소유자 제한 없이 조회하며 DB와 Redis 모두에 없는 대화는 404.
-- `/timeseries`의 `interval`: `day`(기본) 또는 `hour`. UTC로 구간을 나눈다.
-  첫·마지막 구간은 조회 기간과 겹치는 부분만 집계한다.
 - `/logs`, `/conversations`의 `limit`: 기본 50, 1~200. `offset`: 기본 0, 0 이상.
   응답 `total`은 페이지를 나누기 전 결과 개수다.
 
-예: `/analytics/timeseries?start=2026-09-01T00:00:00Z&end=2026-09-08T00:00:00Z&interval=day`
+예: `/analytics/summary?start=2026-09-01T00:00:00Z&end=2026-09-08T00:00:00Z`
 
 통계의 `request_count`는 해당 기간에 남아 있는 성공 응답 로그 수다.
 `conversation_count`는 전체 DB 대화와 Redis에만 남은 대화를 합친 수(기간 내 생성 건수가 아님),
