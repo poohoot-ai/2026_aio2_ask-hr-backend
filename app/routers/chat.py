@@ -141,17 +141,25 @@ def _stream_answer(conversation_id: UUID, contents: list, system_prompt: str):
 @router.post("/{conversation_id}/chat")
 def chat(payload: ChatRequest, conversation_id: UUID = Depends(require_own_conversation)):
     conversation_title = _conversation_title(conversation_id)
-    # 이전 대화를 먼저 만든다. 사용자 메시지를 저장한 뒤에 만들면
-    # 방금 쓴 답변이 이력에도 들어가 같은 말을 두 번 보내게 된다.
-    history = _build_history(conversation_id)    
+    # 후속 질문의 주제도 확인할 수 있도록, 사용자 메시지 저장 전에 이력을 읽는다.
+    history = _build_history(conversation_id)
+    # 선택한 파일이 누락되거나 비어 있으면 모델 호출 전에 오류로 처리한다.
+    try:
+        system_prompt = build_system_prompt(conversation_title, payload.content, history)
+    except (OSError, ValueError) as exc:
+        # 파일 읽기 실패, UTF-8 해석 실패, 빈 파일을 기존 HTTPException으로 알린다.
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "선택한 규정 파일을 읽을 수 없습니다. "
+                "backend/data/regulations 폴더의 해당 MD 파일과 UTF-8 저장 여부를 확인해 주세요."
+            ),
+        ) from exc
 
     # 1) 사용자 메시지를 먼저 메시지 테이블에 저장한다.
     #    모델 호출이 실패해도(429 등) 사용자가 쓴 답변은 남아야 한다.
     create_message(conversation_id, MessageCreate(role="user", content=payload.content))
     contents = history + [{"role": "user", "parts": [{"text": payload.content}]}]    
-
-	# 2) 제미나이 시스템 프롬프트를 생성한다.
-    system_prompt = build_system_prompt(conversation_title)
 
     return _stream_answer(
         conversation_id, 
