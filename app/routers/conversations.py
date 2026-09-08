@@ -40,7 +40,32 @@ def create_message(conversation_id: UUID, payload: MessageCreate):
         .execute()
     )
     cache_delete(_messages_cache_key(conversation_id))   # 이 줄을 추가
+    if payload.role == "user":
+        _update_first_message_title(conversation_id, result.data[0])
     return result.data[0]
+
+def _update_first_message_title(conversation_id: UUID, message: dict) -> None:
+    """전체 사용자 메시지 중 첫 메시지만 대화 제목으로 사용한다."""
+    first = (
+        supabase.table("messages")
+        .select("id")
+        .eq("conversation_id", str(conversation_id))
+        .eq("role", "user")
+        .order("created_at")
+        .order("id")
+        .limit(1)
+        .execute()
+    )
+    if not first.data or first.data[0]["id"] != message["id"]:
+        return
+
+    title = " ".join(message["content"].split())[:50] or "새 대화"
+    (
+        supabase.table("conversations")
+        .update({"title": title})
+        .eq("id", str(conversation_id))
+        .execute()
+    )
 
 def list_messages(conversation_id: UUID, limit: int = 20, offset: int = 0):
     cache_key = _messages_cache_key(conversation_id)
