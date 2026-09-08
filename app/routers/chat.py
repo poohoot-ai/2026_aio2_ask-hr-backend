@@ -60,7 +60,7 @@ def usage_logs(conversation_id: UUID = Depends(require_own_conversation)):
     return [json.loads(item) for item in raw]
 
 def _conversation_title(conversation_id: UUID) -> str:
-    """대화 제목이 대화에 포함된다. `새 대화 시작` 에서 받은 값이다."""
+    """대화 제목을 읽는다. 첫 사용자 메시지가 저장되면 제목도 갱신된다."""
     result = (
         supabase.table("conversations")
         .select("title")
