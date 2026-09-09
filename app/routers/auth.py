@@ -3,10 +3,10 @@ from fastapi import APIRouter, HTTPException
 from app.db import get_anon_client
 from app.schemas import LoginRequest, SignupRequest, TokenResponse
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["인증"])
 
 
-@router.post("/signup", response_model=TokenResponse)
+@router.post("/signup", response_model=TokenResponse, summary="회원가입")
 def signup(payload: SignupRequest):
     client = get_anon_client()
     try:
@@ -29,7 +29,7 @@ def signup(payload: SignupRequest):
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, summary="로그인")
 def login(payload: LoginRequest):
     client = get_anon_client()
     try:

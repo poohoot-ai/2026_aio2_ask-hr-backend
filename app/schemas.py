@@ -27,10 +27,6 @@ class ProfileOut(BaseModel):
     created_at: datetime
 
 # ── 대화 ──────────────────────────────────────────────────────────
-class ConversationCreate(BaseModel):
-    user_id: UUID
-    title: str = Field(min_length=1, max_length=100)
-
 class ConversationOut(BaseModel):
     id: UUID
     user_id: UUID
@@ -63,13 +59,3 @@ class ChatRequest(BaseModel):
     length: str | None = None
 
 
-class RegenerateRequest(BaseModel):
-    # 주의: ChatRequest 를 재사용하면 안 된다. 거기에는 content 가 필수라서,
-    #      질문을 다시 보내지 않는 이 요청은 422 로 거부당한다.
-    tone: str | None = None
-    length: str | None = None
-
-class FeedbackRequest(BaseModel):
-    message_id: UUID
-    # None 이면 취소다. 한 번 누른 것을 되돌릴 수 있어야 한다.
-    value: Literal["up", "down"] | None = None
