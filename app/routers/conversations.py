@@ -13,7 +13,7 @@ from app.deps import require_own_conversation
 
 MESSAGES_CACHE_TTL_SECONDS = 300
 
-router = APIRouter(prefix="/conversations", tags=["conversations"])
+router = APIRouter(prefix="/conversations", tags=["대화"])
 
 def _messages_cache_key(conversation_id: UUID) -> str:
     return f"messages:{conversation_id}"
@@ -90,13 +90,6 @@ def list_messages(conversation_id: UUID, limit: int = 20, offset: int = 0):
     return result.data
 
 
-@router.post("/{conversation_id}/messages", response_model=MessageOut)
-def post_message(
-    payload: MessageCreate, conversation_id: UUID = Depends(require_own_conversation)
-):
-    return create_message(conversation_id, payload)
-
-
-@router.get("/{conversation_id}/messages", response_model=list[MessageOut])
+@router.get("/{conversation_id}/messages", response_model=list[MessageOut], summary="대화 메시지 목록 조회")
 def get_messages(conversation_id: UUID = Depends(require_own_conversation)):
     return list_messages(conversation_id)

@@ -16,12 +16,12 @@ from app.gemini_client import (
     client,
 )
 from app.routers.conversations import create_message, list_messages
-from app.schemas import ChatRequest, RegenerateRequest, MessageCreate, MessageOut, FeedbackRequest
+from app.schemas import ChatRequest, MessageCreate
 from app.redis_client import r
 from app.deps import require_own_conversation
 
 # 채팅을 처리하는 엔드포인트 라우트
-router = APIRouter(prefix="/conversations", tags=["chat"])
+router = APIRouter(prefix="/conversations", tags=["대화"])
 
 # 사용자와 챗봇 메시지를 합쳐 최근 몇 개까지 모델에 보낼지.
 # 20개면 대략 10번 주고받은 분량이다.
@@ -53,11 +53,6 @@ def _log_usage(conversation_id: UUID, started_at: float, usage) -> None:
     key = _usage_log_key(conversation_id)
     r.lpush(key, json.dumps(entry))
     r.ltrim(key, 0, MAX_USAGE_LOGS - 1)
-
-@router.get("/{conversation_id}/usage-logs")
-def usage_logs(conversation_id: UUID = Depends(require_own_conversation)):
-    raw = r.lrange(_usage_log_key(conversation_id), 0, MAX_USAGE_LOGS - 1)
-    return [json.loads(item) for item in raw]
 
 def _conversation_title(conversation_id: UUID) -> str:
     """대화 제목을 읽는다. 첫 사용자 메시지가 저장되면 제목도 갱신된다."""
@@ -138,7 +133,7 @@ def _stream_answer(conversation_id: UUID, contents: list, system_prompt: str):
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
-@router.post("/{conversation_id}/chat")
+@router.post("/{conversation_id}/chat", summary="채팅 응답 생성")
 def chat(payload: ChatRequest, conversation_id: UUID = Depends(require_own_conversation)):
     conversation_title = _conversation_title(conversation_id)
     # 후속 질문의 주제도 확인할 수 있도록, 사용자 메시지 저장 전에 이력을 읽는다.

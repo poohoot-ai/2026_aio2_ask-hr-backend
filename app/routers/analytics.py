@@ -12,7 +12,7 @@ from app.db import supabase
 from app.deps import CurrentUser, get_current_user
 from app.redis_client import r
 
-router = APIRouter(prefix="/analytics", tags=["analytics"])
+router = APIRouter(prefix="/analytics", tags=["대시보드"])
 MAX_USAGE_LOGS = 50
 
 
@@ -173,21 +173,21 @@ def load_dataset(
     return Dataset(start, end, conversations, logs, skipped)
 
 
-@router.get("/summary", response_model=SummaryResult)
+@router.get("/summary", response_model=SummaryResult, summary="사용량 통계 요약 조회")
 def summary(data: Dataset = Depends(load_dataset)):
     return dict(**data.base(), conversation_count=len(data.conversations),
                 active_conversation_count=len({row.conversation_id for row in data.logs}),
                 metrics=metrics(data.logs))
 
 
-@router.get("/logs", response_model=LogsResult)
+@router.get("/logs", response_model=LogsResult, summary="사용량 로그 목록 조회")
 def logs(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
          data: Dataset = Depends(load_dataset)):
     return dict(**data.base(), total=len(data.logs), limit=limit, offset=offset,
                 items=data.logs[offset:offset + limit])
 
 
-@router.get("/conversations", response_model=ConversationsResult)
+@router.get("/conversations", response_model=ConversationsResult, summary="대화별 사용량 통계 조회")
 def conversations(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
                   data: Dataset = Depends(load_dataset)):
     grouped = defaultdict(list)
